@@ -1,6 +1,6 @@
 # Next Word Prediction
 
-Simple Next word prediction model using LSTM. You can optionally provide a text file, or specify a wikipedia article you want to train the model on. 
+Simple Next word prediction model using an LSTM. You can provide a text file to train on, or specify a wikipedia article you want to train the model on. 
 
 ## Examples 
 

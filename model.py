@@ -5,6 +5,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Tenso
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.text import Tokenizer
+import tensorflow as tf
 
 import string
 import pickle
@@ -130,18 +131,17 @@ class NWPModel:
     def predict(self, predict_text):
 
         use_model = load_model('nextword.h5')
+        sequence = np.array(self.tokenizer.texts_to_sequences([predict_text])[0])
 
-        sequence = self.tokenizer.texts_to_sequences([predict_text])[0]
-        sequence = np.array(sequence)
-
-        preds = np.argmax(use_model.predict(sequence), axis=-1)
+        # preds = np.argmax(use_model.predict(sequence), axis=-1)
+        preds = tf.math.top_k(use_model.predict(sequence), 5)
 
         rev_tokenizer = {}
 
         for key, value in self.tokenizer.word_index.items():
             rev_tokenizer[value] = key
 
-        predicted_words = list(set([rev_tokenizer[i] for i in preds]))
+        predicted_words = list(set([rev_tokenizer[i] for i in preds.indices.numpy().tolist()[0]]))
 
         return predicted_words
 
@@ -198,7 +198,7 @@ def main():
 
     if args.predict:
         predwords = nw_model.predict(args.predict)
-        print("predicged words:")
+        print("predicged words: (from most likely to least likely")
         print(predwords)
 
 if __name__ == "__main__":
