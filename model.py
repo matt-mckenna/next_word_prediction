@@ -1,5 +1,5 @@
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Embedding, Dense, LSTM
+from tensorflow.keras.layers import Embedding, Dense, LSTM, Bidirectional
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 from tensorflow.keras.models import load_model
@@ -109,7 +109,7 @@ class NWPModel:
 
         self.model = Sequential()
         self.model.add(Embedding(self.vocab_size, 10, input_length=1))
-        self.model.add(LSTM(self.lstm_units, return_sequences=True))
+        self.model.add(LSTM(10, return_sequences=True))
         self.model.add(LSTM(self.lstm_units))
         self.model.add(Dense(1000, activation="relu"))
         self.model.add(Dense(self.vocab_size, activation="softmax"))
@@ -133,13 +133,14 @@ class NWPModel:
         use_model = load_model('nextword.h5')
         sequence = np.array(self.tokenizer.texts_to_sequences([predict_text])[0])
 
-        # preds = np.argmax(use_model.predict(sequence), axis=-1)
-        preds = tf.math.top_k(use_model.predict(sequence), 5)
+        preds = tf.math.top_k(use_model.predict(sequence), 3)
 
         rev_tokenizer = {}
 
         for key, value in self.tokenizer.word_index.items():
             rev_tokenizer[value] = key
+        # default value for 0 token
+        rev_tokenizer[0] = "OTHER"
 
         predicted_words = list(set([rev_tokenizer[i] for i in preds.indices.numpy().tolist()[0]]))
 
