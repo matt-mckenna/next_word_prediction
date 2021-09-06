@@ -1,7 +1,7 @@
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Embedding, Dense, LSTM, Bidirectional
+from tensorflow.keras.layers import Embedding, Dense, LSTM
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, TensorBoard
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -15,7 +15,17 @@ import wikipedia
 
 class NWPModel:
 
-    def __init__(self, load_from_file=False, lstm_units=1000, training_data=None, vocab_size=None, x=None, y=None, tokenizer=None, epochs=50):
+    def __init__(self, load_from_file=False,
+                 lstm_units=50,
+                 training_data=None,
+                 vocab_size=None,
+                 x=None,
+                 y=None,
+                 tokenizer=None,
+                 epochs=50,
+                 embedding_dim=64,
+                 max_seq_len=30):
+
         self.vocab_size = vocab_size
         self.x = x
         self.y = y
@@ -24,6 +34,8 @@ class NWPModel:
         self.lstm_units = lstm_units
         self.training_data = training_data
         self.epochs = epochs
+        self.embedding_dim = embedding_dim
+        self.max_seq_len = max_seq_len
 
     def get_wiki_data(self, article):
 
@@ -108,10 +120,10 @@ class NWPModel:
     def build_model(self, print_summary=False):
 
         self.model = Sequential()
-        self.model.add(Embedding(self.vocab_size, 10, input_length=1))
-        self.model.add(LSTM(10, return_sequences=True))
+        self.model.add(Embedding(self.vocab_size, self.embedding_dim, input_length=1))
+        self.model.add(LSTM(self.lstm_units, return_sequences=True))
         self.model.add(LSTM(self.lstm_units))
-        self.model.add(Dense(1000, activation="relu"))
+        self.model.add(Dense(self.lstm_units, activation="relu"))
         self.model.add(Dense(self.vocab_size, activation="softmax"))
 
         if print_summary:
@@ -122,11 +134,9 @@ class NWPModel:
                                      save_best_only=True, mode='auto')
 
         reduce = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=3, min_lr=0.0001, verbose=1)
-        logdir = 'logsnextword1'
 
-        tensorboard_Visualization = TensorBoard(log_dir=logdir)
-        self.model.compile(loss="categorical_crossentropy", optimizer=Adam(learning_rate=0.001))
-        self.model.fit(self.x, self.y, epochs=self.epochs, batch_size=64, callbacks=[checkpoint, reduce, tensorboard_Visualization])
+        self.model.compile(loss="categorical_crossentropy", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+        self.model.fit(self.x, self.y, epochs=self.epochs, batch_size=64, callbacks=[checkpoint, reduce])
 
     def predict(self, predict_text):
 
