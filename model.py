@@ -65,14 +65,6 @@ class NWPModel:
         translator = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
         data = data.translate(translator)
 
-        z = []
-
-        for i in data.split():
-            if i not in z:
-                z.append(i)
-
-        data = ' '.join(z)
-
         tokenizer = Tokenizer()
         tokenizer.fit_on_texts([data])
 
@@ -141,7 +133,7 @@ class NWPModel:
     def predict(self, predict_text):
 
         use_model = load_model('nextword.h5')
-        sequence = np.array(self.tokenizer.texts_to_sequences([predict_text])[0])
+        sequence = np.array(self.tokenizer.texts_to_sequences([predict_text.strip()])[0])
 
         preds = tf.math.top_k(use_model.predict(sequence), 3)
 
@@ -152,7 +144,7 @@ class NWPModel:
         # default value for 0 token
         rev_tokenizer[0] = "OTHER"
 
-        predicted_words = list(set([rev_tokenizer[i] for i in preds.indices.numpy().tolist()[0]]))
+        predicted_words = list([rev_tokenizer[i] for i in preds.indices.numpy().tolist()[0]])
 
         return predicted_words
 
@@ -209,7 +201,7 @@ def main():
 
     if args.predict:
         predwords = nw_model.predict(args.predict)
-        print("predicged words: (from most likely to least likely")
+        print("predicged words: (from most likely to least likely)")
         print(predwords)
 
 if __name__ == "__main__":
